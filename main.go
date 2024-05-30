@@ -129,9 +129,7 @@ func run() error {
 				Name:      "temperature",
 			}, []string{"device_id"})
 
-			registry.MustRegister(deviceLabels) // register global device labels cache
 			registry.MustRegister(meterHumidity, meterTemperature)
-
 			meterHumidity.WithLabelValues(status.ID).Set(float64(status.Humidity))
 			meterTemperature.WithLabelValues(status.ID).Set(status.Temperature)
 		case switchbot.PlugMiniJP:
@@ -153,12 +151,20 @@ func run() error {
 				Name:      "electricCurrent",
 			}, []string{"device_id"})
 
-			registry.MustRegister(deviceLabels)
 			registry.MustRegister(plugWeight, plugVoltage, plugElectricCurrent)
 			plugWeight.WithLabelValues(status.ID).Set(status.Weight)
 			plugVoltage.WithLabelValues(status.ID).Set(status.Voltage)
 			plugElectricCurrent.WithLabelValues(status.ID).Set(status.ElectricCurrent)
 		}
+
+		battery := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "switchbot",
+			Name:      "battery",
+		}, []string{"device_id"})
+
+		registry.MustRegister(deviceLabels)
+		registry.MustRegister(battery)
+		battery.WithLabelValues(status.ID).Set(float64(status.Battery))
 
 		promhttp.HandlerFor(registry, promhttp.HandlerOpts{}).ServeHTTP(w, r)
 	})
